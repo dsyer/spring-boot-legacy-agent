@@ -15,59 +15,41 @@
  */
 package com.example;
 
-import java.io.ByteArrayInputStream;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
-import java.security.ProtectionDomain;
+import java.lang.reflect.Modifier;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtConstructor;
-import javassist.CtNewConstructor;
-import javassist.Modifier;
-import javassist.NotFoundException;
+import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
+import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
+
+import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
+import net.bytebuddy.description.method.MethodDescription.InDefinedShape;
+import net.bytebuddy.description.method.MethodList;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.utility.JavaModule;
 
 /**
  * @author Dave Syer
  *
  */
-public class SpringApplicationBuilderTransformer implements ClassFileTransformer {
+public class SpringApplicationBuilderTransformer implements Transformer {
 
 	@Override
-	public byte[] transform(ClassLoader loader, String className,
-			Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
-			byte[] classfileBuffer) throws IllegalClassFormatException {
-		String instrumentedClassName = "org.springframework.boot.builder.SpringApplicationBuilder";
-		byte[] bytecode = classfileBuffer;
+	public Builder<?> transform(Builder<?> builder, TypeDescription typeDescription,
+			ClassLoader classLoader, JavaModule module) {
 		try {
-			ClassPool classPool = ClassPool.getDefault();
-			CtClass classDef = classPool.makeClass(new ByteArrayInputStream(bytecode));
-			if (classDef.getName().equals(instrumentedClassName)) {
-				Agent.addPathList(classPool, loader);
-				try {
-					classDef.getDeclaredConstructor(
-							new CtClass[] { classPool.getCtClass("java.lang.Class[]") });
-				}
-				catch (NotFoundException e) {
-					System.out.println("Instrumenting " + classDef.getName());
-					addConstructor(new CtClass[] { classPool.get("java.lang.Class[]") },
-							classDef, "{this((Object[])$1);}");
-					bytecode = classDef.toBytecode();
-				}
+			MethodList<InDefinedShape> methods = typeDescription.getDeclaredMethods()
+					.filter(isConstructor().and(takesArguments(Object[].class)));
+			if (!methods.isEmpty()) {
+				return builder.defineConstructor(Modifier.PUBLIC)
+						.withParameter(Class[].class)
+						.intercept(MethodCall.invoke(methods.get(0)).withAllArguments());
 			}
+			return builder;
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
-		return bytecode;
-	}
-
-	private void addConstructor(CtClass[] params, CtClass classDef, String body)
-			throws Exception {
-		CtConstructor ctor = CtNewConstructor.make(params, new CtClass[0], body,
-				classDef);
-		ctor.setModifiers(Modifier.PUBLIC | Modifier.VARARGS);
-		classDef.addConstructor(ctor);
 	}
 
 }

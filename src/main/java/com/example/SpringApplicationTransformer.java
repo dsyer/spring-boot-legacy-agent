@@ -15,64 +15,54 @@
  */
 package com.example;
 
-import java.io.ByteArrayInputStream;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
-import java.security.ProtectionDomain;
+import java.lang.reflect.Modifier;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.Modifier;
-import javassist.NotFoundException;
+import static net.bytebuddy.matcher.ElementMatchers.isStatic;
+import static net.bytebuddy.matcher.ElementMatchers.named;
+import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
+
+import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
+import net.bytebuddy.description.method.MethodDescription.InDefinedShape;
+import net.bytebuddy.description.method.MethodList;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType.Builder;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.utility.JavaModule;
 
 /**
  * @author Dave Syer
  *
  */
-public class SpringApplicationTransformer implements ClassFileTransformer {
+public class SpringApplicationTransformer implements Transformer {
 
 	@Override
-	public byte[] transform(ClassLoader loader, String className,
-			Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
-			byte[] classfileBuffer) throws IllegalClassFormatException {
-		String instrumentedClassName = "org.springframework.boot.SpringApplication";
-		String instrumentedMethodName = "run";
-		byte[] bytecode = classfileBuffer;
-		if (Boolean.getBoolean("agent.debug")
-				&& className.startsWith("org/springframework")) {
-			System.out.println("Inspecting " + className);
-		}
+	public Builder<?> transform(Builder<?> builder, TypeDescription typeDescription,
+			ClassLoader classLoader, JavaModule module) {
 		try {
-			ClassPool classPool = ClassPool.getDefault();
-			CtClass classDef = classPool.makeClass(new ByteArrayInputStream(bytecode));
-			if (classDef.getName().equals(instrumentedClassName)) {
-				Agent.addPathList(classPool, loader);
-				try {
-					classDef.getDeclaredMethod(instrumentedMethodName,
-							new CtClass[] { classPool.getCtClass("java.lang.Class"),
-									classPool.getCtClass("java.lang.String[]") });
-				}
-				catch (NotFoundException e) {
-					System.out.println("Instrumenting " + classDef.getName());
-					addMethod(classDef,
-							"static ConfigurableApplicationContext run(Class source, String[] args) { return run((Object)source, args); }");
-					addMethod(classDef,
-							"static ConfigurableApplicationContext run(Class[] source, String[] args) { return run((Object[])source, args); }");
-					bytecode = classDef.toBytecode();
-				}
+			MethodList<InDefinedShape> methods = typeDescription.getDeclaredMethods()
+					.filter(named("run").and(isStatic()
+							.and(takesArguments(Object[].class, String[].class))));
+			if (!methods.isEmpty()) {
+				builder = builder.defineMethod("run", classLoader.loadClass(
+						"org.springframework.context.ConfigurableApplicationContext"),
+						Modifier.PUBLIC | Modifier.STATIC).withParameter(Class[].class)
+						.withParameter(String[].class)
+						.intercept(MethodCall.invoke(methods.get(0)).withAllArguments());
 			}
+			methods = typeDescription.getDeclaredMethods().filter(named("run")
+					.and(isStatic().and(takesArguments(Object.class, String[].class))));
+			if (!methods.isEmpty()) {
+				builder = builder.defineMethod("run", classLoader.loadClass(
+						"org.springframework.context.ConfigurableApplicationContext"),
+						Modifier.PUBLIC | Modifier.STATIC).withParameter(Class.class)
+						.withParameter(String[].class)
+						.intercept(MethodCall.invoke(methods.get(0)).withAllArguments());
+			}
+			return builder;
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
-		return bytecode;
-	}
-
-	private void addMethod(CtClass classDef, String method) throws Exception {
-		CtMethod classMethod = CtMethod.make(method, classDef);
-		classMethod.setModifiers(Modifier.PUBLIC | Modifier.STATIC | Modifier.VARARGS);
-		classDef.addMethod(classMethod);
 	}
 
 }
