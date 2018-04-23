@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example;
+package org.springframework.boot.legacy;
 
 import java.lang.reflect.Modifier;
 
-import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
+import static net.bytebuddy.matcher.ElementMatchers.isStatic;
+import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
@@ -32,17 +33,29 @@ import net.bytebuddy.utility.JavaModule;
  * @author Dave Syer
  *
  */
-public class SpringApplicationBuilderTransformer implements Transformer {
+public class SpringApplicationTransformer implements Transformer {
 
 	@Override
 	public Builder<?> transform(Builder<?> builder, TypeDescription typeDescription,
 			ClassLoader classLoader, JavaModule module) {
 		try {
 			MethodList<InDefinedShape> methods = typeDescription.getDeclaredMethods()
-					.filter(isConstructor().and(takesArguments(Object[].class)));
+					.filter(named("run").and(isStatic()
+							.and(takesArguments(Object[].class, String[].class))));
 			if (!methods.isEmpty()) {
-				return builder.defineConstructor(Modifier.PUBLIC)
-						.withParameter(Class[].class)
+				builder = builder.defineMethod("run", classLoader.loadClass(
+						"org.springframework.context.ConfigurableApplicationContext"),
+						Modifier.PUBLIC | Modifier.STATIC).withParameter(Class[].class)
+						.withParameter(String[].class)
+						.intercept(MethodCall.invoke(methods.get(0)).withAllArguments());
+			}
+			methods = typeDescription.getDeclaredMethods().filter(named("run")
+					.and(isStatic().and(takesArguments(Object.class, String[].class))));
+			if (!methods.isEmpty()) {
+				builder = builder.defineMethod("run", classLoader.loadClass(
+						"org.springframework.context.ConfigurableApplicationContext"),
+						Modifier.PUBLIC | Modifier.STATIC).withParameter(Class.class)
+						.withParameter(String[].class)
 						.intercept(MethodCall.invoke(methods.get(0)).withAllArguments());
 			}
 			return builder;
