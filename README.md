@@ -33,4 +33,4 @@ runs with 2.2.x snapshots.
 
 There are, of course, other binary API differences between Spring Boot 1.5 and 2.0, but if you only used the entry points in `SpringApplication` and `SpringApplicationBuilder` the agent will make your app portable.
 
-You can also attach the agent on the command line: `-javaagent:library/target/spring-boot-legacy-agent-0.0.1-SNAPSHOT-agent.jar`. In this case you don't need to call `LegacyApplication.attach()`.
+You can also attach the agent on the command line: `-javaagent:library/target/spring-boot-legacy-agent-0.0.1-SNAPSHOT.jar`. In this case you don't need to call `LegacyApplication.attach()`.

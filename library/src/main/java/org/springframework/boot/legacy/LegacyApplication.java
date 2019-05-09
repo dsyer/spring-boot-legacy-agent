@@ -24,8 +24,8 @@ import com.sun.tools.attach.VirtualMachine;
 public class LegacyApplication {
 
 	private static String agentFile = new File(System.getProperty("user.home")
-			+ "/.m2/repository/org/springframework/boot/experimental/spring-boot-legacy-agent/"
-			+ "0.0.1-SNAPSHOT/spring-boot-legacy-agent-0.0.1-SNAPSHOT-agent.jar")
+			+ "/.m2/repository/org/springframework/boot/experimental/spring-boot-custom-agent/"
+			+ "0.0.1.BUILD-SNAPSHOT/spring-boot-custom-agent-0.0.1.BUILD-SNAPSHOT.jar")
 					.getAbsolutePath();
 
 	public static void attach() {

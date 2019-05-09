@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.springframework.boot.experimental</groupId>
-	<artifactId>spring-boot-legacy-app</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>spring-boot-custom-app</artifactId>
+	<version>0.0.1.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>app</name>
@@ -28,8 +28,18 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot.experimental</groupId>
-			<artifactId>spring-boot-legacy-agent</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<artifactId>spring-boot-custom-library</artifactId>
+			<version>0.0.1.BUILD-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot.experimental</groupId>
+			<artifactId>spring-boot-custom-agent</artifactId>
+			<version>0.0.1.BUILD-SNAPSHOT</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>

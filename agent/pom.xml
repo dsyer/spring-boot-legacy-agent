@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.springframework.boot.experimental</groupId>
-	<artifactId>spring-boot-custom-library</artifactId>
+	<artifactId>spring-boot-custom-agent</artifactId>
 	<version>0.0.1.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>library</name>
+	<name>agent</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
@@ -30,6 +30,18 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy-agent</artifactId>
+			<version>1.9.9</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>1.9.9</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
 			<groupId>com.sun</groupId>
 			<artifactId>tools</artifactId>
 			<version>${java.version}</version>
@@ -43,5 +55,35 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Agent-Class>org.springframework.boot.legacy.Agent</Agent-Class>
+							<Premain-Class>org.springframework.boot.legacy.Agent</Premain-Class>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<createDependencyReducedPom>false</createDependencyReducedPom>
+					<artifactSet>
+						<includes>
+							<include>net.bytebuddy:*</include>
+						</includes>
+					</artifactSet>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 
 </project>

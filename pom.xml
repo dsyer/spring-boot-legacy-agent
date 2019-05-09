@@ -15,6 +15,7 @@
 	<name>Parent Demo</name>
 
 	<modules>
+		<module>agent</module>
 		<module>library</module>
 		<module>app</module>
 	</modules>
