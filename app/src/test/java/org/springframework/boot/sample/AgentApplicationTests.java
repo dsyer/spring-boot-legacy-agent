@@ -1,4 +1,4 @@
-package org.springframework.boot.legacy;
+package org.springframework.boot.sample;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

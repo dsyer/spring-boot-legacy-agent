@@ -28,18 +28,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot.experimental</groupId>
-			<artifactId>spring-boot-custom-library</artifactId>
+			<artifactId>spring-boot-custom-agent</artifactId>
 			<version>0.0.1.BUILD-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot.experimental</groupId>
-			<artifactId>spring-boot-custom-agent</artifactId>
-			<version>0.0.1.BUILD-SNAPSHOT</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>

@@ -13,33 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.boot.legacy;
+package org.springframework.boot.agent;
 
 import java.lang.instrument.Instrumentation;
 
+import static net.bytebuddy.matcher.ElementMatchers.named;
+
+import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.agent.builder.AgentBuilder.Listener;
-import net.bytebuddy.matcher.ElementMatchers;
-import net.bytebuddy.utility.JavaModule;
 
 /**
  * @author Dave Syer
  *
  */
-public class Agent {
+public class SpringApplicationAgent {
+
+	public static void install() throws Exception {
+		premain(null, ByteBuddyAgent.install());
+	}
 
 	public static void premain(String args, Instrumentation inst) throws Exception {
-		new AgentBuilder.Default().with(new Listener.Adapter() {
-			@Override
-			public void onError(String typeName, ClassLoader classLoader,
-					JavaModule module, boolean loaded, Throwable throwable) {
-				throwable.printStackTrace();
-			}
-		}).type(ElementMatchers.named("org.springframework.boot.SpringApplication"))
+		new AgentBuilder.Default()
+				.with(AgentBuilder.Listener.StreamWriting.toSystemError()
+						.withTransformationsOnly())
+				.with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+				.type(named("org.springframework.boot.SpringApplication"))
 				.transform(new SpringApplicationTransformer()) //
-				.type(ElementMatchers.named(
-						"org.springframework.boot.builder.SpringApplicationBuilder"))
-				.transform(new SpringApplicationBuilderTransformer()) //
+				.type(named("org.springframework.core.io.support.PropertiesLoaderUtils"))
+				.transform(new PropertiesLoaderUtilsTransformer()) //
 				.installOn(inst);
 	}
 
